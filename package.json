@@ -12,7 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "solana", 
+    "solana",
     "dex",
     "order-execution",
     "raydium",
@@ -22,12 +22,19 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@fastify/websocket": "^11.2.0",
+    "bullmq": "^5.66.0",
     "dotenv": "^17.2.3",
-    "expres": "^0.0.5"
+    "expres": "^0.0.5",
+    "fastify": "^5.6.2",
+    "ioredis": "^5.8.2",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.1",
+    "@types/pg": "^8.16.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",
     "eslint": "^9.39.1",
