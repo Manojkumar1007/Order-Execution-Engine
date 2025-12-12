@@ -103,6 +103,8 @@ Port: ${config.server.port}
 WebSocket: Enabled
 Queue Concurrency: ${config.queue.concurrency}
 Max Retries: ${config.queue.maxRetries}
+Database URI: ${config.database.url}
+REDIS URI: ${config.redis.url}
 
 Available endpoints:
   POST /api/orders/execute
