@@ -1,5 +1,8 @@
 import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config } from './config/index.js';
 import { initDatabase } from './config/database.js';
 import redis from './config/redis.js';
@@ -18,6 +21,15 @@ await fastify.register(websocket, {
   options: {
     maxPayload: 1048576, // 1MB
   },
+});
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Register Static files
+await fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '../public'),
+  prefix: '/', // optional: default '/'
 });
 
 // Health check endpoint
@@ -48,20 +60,7 @@ fastify.get('/api/orders/:orderId/ws', { websocket: true }, (connection, req) =>
   return import('./routes/orders.js').then(m => m.subscribeToOrder(connection, req));
 });
 
-// Root endpoint
-fastify.get('/', async () => {
-  return {
-    name: 'Order Execution Engine',
-    version: '1.0.0',
-    endpoints: {
-      health: 'GET /health',
-      metrics: 'GET /api/metrics',
-      submitOrder: 'POST /api/orders/execute',
-      getOrder: 'GET /api/orders/:orderId',
-      listOrders: 'GET /api/orders',
-    },
-  };
-});
+
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
