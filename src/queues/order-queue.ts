@@ -28,7 +28,7 @@ export const orderQueue = new Queue('orders', {
 const dexRouter = new MockDexRouter();
 
 // Process order job - this is where the main order execution logic happens
-async function processOrder(job: Job<{ orderId: string }>): Promise<void> {
+export async function processOrder(job: Job<{ orderId: string }>): Promise<void> {
   const { orderId } = job.data;
 
   try {
@@ -48,7 +48,7 @@ async function processOrder(job: Job<{ orderId: string }>): Promise<void> {
     });
 
     // Get best quote from both DEXs
-    const { raydiumQuote, meteoraQuote, bestQuote, priceImprovement } = 
+    const { raydiumQuote, meteoraQuote, bestQuote, priceImprovement } =
       await dexRouter.getBestQuote(order.tokenIn, order.tokenOut, order.amount);
 
     // Log routing decision
