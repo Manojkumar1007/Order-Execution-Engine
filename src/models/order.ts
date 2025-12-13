@@ -35,7 +35,7 @@ export class OrderModel {
   ): Promise<Order> {
     const id = randomUUID();
     const client = await pool.connect();
-    
+
     try {
       const result = await client.query(
         `INSERT INTO orders (id, token_in, token_out, amount, slippage, status, retry_count)
@@ -45,10 +45,10 @@ export class OrderModel {
       );
 
       const order = this.mapRow(result.rows[0]);
-      
+
       // Cache in Redis for quick access
       await redis.setex(`order:${id}`, 3600, JSON.stringify(order));
-      
+
       return order;
     } finally {
       client.release();
@@ -78,10 +78,10 @@ export class OrderModel {
     }
 
     const order = this.mapRow(result.rows[0]);
-    
+
     // Update cache
     await redis.setex(`order:${id}`, 3600, JSON.stringify(order));
-    
+
     return order;
   }
 
@@ -94,7 +94,7 @@ export class OrderModel {
     additionalData?: Partial<Order>
   ): Promise<void> {
     const client = await pool.connect();
-    
+
     try {
       const updates: string[] = ['status = $2', 'updated_at = NOW()'];
       const values: any[] = [id, status];
@@ -160,7 +160,7 @@ export class OrderModel {
       'SELECT * FROM orders ORDER BY created_at DESC LIMIT $1',
       [limit]
     );
-    return result.rows.map(row => this.mapRow(row));
+    return result.rows.map((row: any) => this.mapRow(row));
   }
 
   /**
