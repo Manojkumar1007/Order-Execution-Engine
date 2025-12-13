@@ -2,6 +2,8 @@
 
 A sophisticated market order execution engine with DEX routing between Raydium and Meteora for the Solana blockchain. This system intelligently routes trades through multiple decentralized exchanges to find the best prices and execute swaps efficiently.
 
+> **🚀 Live Demo**: [https://order-execution-engine-h1zi.onrender.com](https://order-execution-engine-h1zi.onrender.com)
+
 ## Table of Contents
 - [Overview](#overview)
 - [Features](#features)
@@ -38,6 +40,20 @@ This project implements a robust market order execution engine that:
 - **Caching Layer**: Redis caching for faster order lookup
 - **Comprehensive Monitoring**: Metrics endpoint for queue and system health
 - **Graceful Shutdown**: Proper cleanup of resources during shutdown
+
+## Design Choices & Concepts
+
+### Why Market Order?
+We implemented **Market Orders** (as opposed to Limit Orders) for this execution engine to prioritize **speed and liquidity**. 
+- **Immediate Execution**: Market orders are executed instantly at the best available price, ensuring the user enters/exits the position without waiting.
+- **Slippage Protection**: While market orders accept the current price, we enforce a strict `slippage` tolerance. If the price moves unfavorably beyond this limit during processing, the transaction is rejected to protect the user's value.
+- **Smart Routing**: Since the price is not fixed, the engine's value comes from finding the *best* market price across multiple DEXs (Raydium vs Meteora) in real-time.
+
+### Key Architectural Decisions
+1.  **Fastify vs Express**: Chosen for its low overhead and high performance, which is critical for a high-throughput trading engine.
+2.  **BullMQ (Redis Queues)**: Decoupling the HTTP request from the actual order execution is vital. It allows the API to remain responsive under high load while orders are processed reliably in the background wih automatic retries.
+3.  **PostgreSQL (Relational DB)**: Financial data requires strict consistency (ACID compliance) which SQL databases provide better than NoSQL alternatives for this use case.
+4.  **WebSockets**: Polling for order status is inefficient. WebSockets provide a direct, full-duplex channel to push updates (Routing -> Building -> Confirmed) instantly to the client.
 
 ## Architecture
 
