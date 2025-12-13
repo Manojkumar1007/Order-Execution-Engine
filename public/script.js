@@ -178,6 +178,15 @@ function connectWebSocket(orderId, verbose = false) {
 
     log(`Connecting to WS for order ${orderId}...`, 'system');
 
+    // Setup JSON viewer if verbose
+    const container = el('json-output-container');
+    const viewer = el('json-viewer');
+    if (verbose) {
+        container.style.display = 'block';
+        viewer.textContent = `Connecting to ${wsUrl}...\nWaiting for updates...`;
+        viewer.style.color = '#cbd5e1';
+    }
+
     const ws = new WebSocket(wsUrl);
     activeWebsockets[orderId] = ws;
 
@@ -185,6 +194,10 @@ function connectWebSocket(orderId, verbose = false) {
         log(`WS Connected for ${orderId}`, 'success');
         el('ws-status').textContent = 'WS Connected';
         el('ws-status').style.color = '#34d399';
+
+        if (verbose) {
+            viewer.textContent += '\nCreate Order Update: Connected!';
+        }
     };
 
     ws.onmessage = (event) => {
@@ -192,9 +205,7 @@ function connectWebSocket(orderId, verbose = false) {
         log(`Create Order Update [${orderId}]: ${data.status}`, 'info');
 
         if (verbose) {
-            const container = el('json-output-container');
-            const viewer = el('json-viewer');
-            container.style.display = 'block';
+            // Pretty print the latest JSON
             viewer.textContent = JSON.stringify(data, null, 2);
         }
 
@@ -211,17 +222,25 @@ function connectWebSocket(orderId, verbose = false) {
     };
 
     ws.onclose = () => {
-        log(`WS Closed for ${orderId.slice(0, 8)}`, 'system');
+        log(`WS Closed for ${orderId}`, 'system');
         delete activeWebsockets[orderId];
 
         if (Object.keys(activeWebsockets).length === 0) {
             el('ws-status').textContent = 'WS Idle';
             el('ws-status').style.color = '#94a3b8';
         }
+
+        if (verbose) {
+            viewer.textContent += '\n\n[Connection Closed]';
+        }
     };
 
     ws.onerror = (err) => {
-        log(`WS Error for ${orderId}: ${err}`, 'error');
+        log(`WS Error for ${orderId}`, 'error');
+        if (verbose) {
+            viewer.textContent += '\n\n[Error] Connection Failed. Check server logs/port.';
+            viewer.style.color = '#ef4444';
+        }
     };
 }
 
