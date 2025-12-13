@@ -82,6 +82,28 @@
                 </div>
             </section>
 
+            <!-- Track Specific Order -->
+            <section class="card tracking-card">
+                <h2>🔍 Track Specific Order</h2>
+                <div class="form-grid" style="grid-template-columns: 3fr 1fr;">
+                    <div class="form-group">
+                        <label>Order ID</label>
+                        <input type="text" id="track-order-id" placeholder="Paste Order UUID here..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button type="button" id="btn-track" class="btn-primary">Connect</button>
+                    </div>
+                </div>
+                <div id="json-output-container"
+                    style="display: none; margin-top: 1rem; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 6px;">
+                    <h3 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">Live Protocol
+                        Message:</h3>
+                    <pre id="json-viewer"
+                        style="color: #cbd5e1; font-size: 0.85rem; max-height: 200px; overflow-y: auto;">Waiting for data...</pre>
+                </div>
+            </section>
+
             <!-- Recent Orders -->
             <section class="card recent-orders-card">
                 <div class="card-header">

@@ -40,7 +40,7 @@ export class MockDexRouter {
     await sleep(config.mock.quoteDelayMs);
 
     const basePrice = this.getBasePrice(tokenIn, tokenOut);
-    
+
     // Raydium typically has slightly higher fees but better liquidity
     // Price variance: -2% to +4%
     const price = applyPriceVariance(basePrice, 0.98, 1.04);
@@ -69,7 +69,7 @@ export class MockDexRouter {
     await sleep(config.mock.quoteDelayMs);
 
     const basePrice = this.getBasePrice(tokenIn, tokenOut);
-    
+
     // Meteora typically has lower fees but more price variance
     // Price variance: -3% to +5%
     const price = applyPriceVariance(basePrice, 0.97, 1.05);
@@ -139,12 +139,17 @@ export class MockDexRouter {
     );
     await sleep(executionDelay);
 
+    // Simulate 5% failure rate (e.g. network timeout, slippage exceeded, etc.)
+    if (Math.random() < 0.05) {
+      throw new Error('Simulated execution failure: DEX transaction rejected by network');
+    }
+
     const basePrice = this.getBasePrice(order.tokenIn, order.tokenOut);
-    
+
     // Apply slippage - final execution price may differ slightly
     const slippageVariance = 1 - (Math.random() * order.slippage);
     const executedPrice = basePrice * slippageVariance;
-    
+
     const fee = selectedDex === 'raydium' ? 0.003 : 0.002;
     const amountOut = order.amount * executedPrice * (1 - fee);
 

@@ -148,7 +148,7 @@ async function submitOrder(payload, index) {
         const data = await res.json();
 
         if (res.ok) {
-            log(`[${index}/5] Created! ID: ${data.orderId.slice(0, 8)}`, 'success');
+            log(`[${index}/5] Created! ID: ${data.orderId}`, 'success');
             connectWebSocket(data.orderId);
             fetchRecentOrders();
         } else {
@@ -159,28 +159,44 @@ async function submitOrder(payload, index) {
     }
 }
 
+// Manual Tracking
+el('btn-track').addEventListener('click', () => {
+    const orderId = el('track-order-id').value.trim();
+    if (!orderId) return;
+
+    log(`Connecting to manual order: ${orderId}`, 'system');
+    connectWebSocket(orderId, true);
+});
+
 // WebSocket Connection
-function connectWebSocket(orderId) {
+function connectWebSocket(orderId, verbose = false) {
     if (activeWebsockets[orderId]) return;
 
     // Determine correct protocol (ws: or wss:)
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/api/orders/${orderId}/ws`;
 
-    log(`Connecting to WS for order ${orderId.slice(0, 8)}...`, 'system');
+    log(`Connecting to WS for order ${orderId}...`, 'system');
 
     const ws = new WebSocket(wsUrl);
     activeWebsockets[orderId] = ws;
 
     ws.onopen = () => {
-        log(`WS Connected for ${orderId.slice(0, 8)}`, 'success');
+        log(`WS Connected for ${orderId}`, 'success');
         el('ws-status').textContent = 'WS Connected';
         el('ws-status').style.color = '#34d399';
     };
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        log(`Create Order Update [${orderId.slice(0, 6)}]: ${data.status}`, 'info');
+        log(`Create Order Update [${orderId}]: ${data.status}`, 'info');
+
+        if (verbose) {
+            const container = el('json-output-container');
+            const viewer = el('json-viewer');
+            container.style.display = 'block';
+            viewer.textContent = JSON.stringify(data, null, 2);
+        }
 
         if (data.data && data.data.txHash) {
             log(`Transaction Hash: ${data.data.txHash}`, 'success');
