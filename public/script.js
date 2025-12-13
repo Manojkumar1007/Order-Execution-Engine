@@ -213,6 +213,16 @@ function connectWebSocket(orderId, verbose = false) {
             log(`Transaction Hash: ${data.data.txHash}`, 'success');
         }
 
+        // Log Routing Details
+        if (data.data && data.data.routingInfo) {
+            const info = data.data.routingInfo;
+            const msg = `[DEX Routing] Raydium: ${info.raydium.output.toFixed(4)} | Meteora: ${info.meteora.output.toFixed(4)} -> Selected ${data.data.selectedDex.toUpperCase()}`;
+
+            log(msg, 'info');
+            console.log(`%c${msg}`, 'color: #3b82f6; font-weight: bold;');
+            console.table(info);
+        }
+
         // Refresh orders table to show new status
         fetchRecentOrders();
 

@@ -69,6 +69,18 @@ export async function processOrder(job: Job<{ orderId: string }>): Promise<void>
         selectedDex: bestQuote.dex,
         estimatedOutput: bestQuote.estimatedOutput,
         priceImprovement: priceImprovement.toFixed(3) + '%',
+        routingInfo: {
+          raydium: {
+            price: raydiumQuote.price,
+            output: raydiumQuote.estimatedOutput,
+            fee: raydiumQuote.fee
+          },
+          meteora: {
+            price: meteoraQuote.price,
+            output: meteoraQuote.estimatedOutput,
+            fee: meteoraQuote.fee
+          }
+        }
       },
     });
 
