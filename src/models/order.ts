@@ -65,6 +65,12 @@ export class OrderModel {
       return JSON.parse(cached);
     }
 
+    // Validate ID as UUID before querying the database
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if (!uuidRegex.test(id)) {
+      return null; // Return null for invalid UUIDs without querying the database
+    }
+
     // Fall back to database
     const result = await pool.query('SELECT * FROM orders WHERE id = $1', [id]);
     if (result.rows.length === 0) {

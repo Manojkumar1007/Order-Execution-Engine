@@ -14,16 +14,23 @@ export interface StatusUpdate {
  * Register a WebSocket connection for an order
  */
 export function registerConnection(orderId: string, ws: WebSocket): void {
+  if (!ws) {
+    console.error('Attempted to register undefined WebSocket connection');
+    return;
+  }
+
   if (!connections.has(orderId)) {
     connections.set(orderId, new Set());
   }
   connections.get(orderId)!.add(ws);
+  console.log(`Registered WS connection for order ${orderId}. Total: ${connections.get(orderId)?.size}`);
 
   // Remove connection on close
   ws.on('close', () => {
     const orderConnections = connections.get(orderId);
     if (orderConnections) {
       orderConnections.delete(ws);
+      console.log(`Removed WS connection for order ${orderId}. Remaining: ${orderConnections.size}`);
       if (orderConnections.size === 0) {
         connections.delete(orderId);
       }
@@ -41,8 +48,10 @@ export function broadcastStatus(update: StatusUpdate): void {
   }
 
   const message = JSON.stringify(update);
-  
+
   for (const ws of orderConnections) {
+    if (!ws) continue; // Safety check
+
     if (ws.readyState === WebSocket.OPEN) {
       try {
         ws.send(message);
@@ -67,7 +76,7 @@ export function closeConnections(orderId: string): void {
       ws.close();
     }
   }
-  
+
   connections.delete(orderId);
 }
 

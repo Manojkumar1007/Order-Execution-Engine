@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { OrderModel } from '../models/order.js';
-import { registerConnection, broadcastStatus } from '../services/websocket-manager.js';
+import { registerConnection } from '../services/websocket-manager.js';
 import { addOrderToQueue } from '../queues/order-queue.js';
 
 interface OrderSubmitBody {
@@ -39,7 +39,7 @@ function validateOrderRequest(body: any): { valid: boolean; error?: string } {
 
 /**
  * POST /api/orders/execute
- * Submit a new market order and upgrade to WebSocket for status updates
+ * Submit a new market order
  */
 export async function executeOrder(request: FastifyRequest, reply: FastifyReply) {
   const body = request.body as OrderSubmitBody;
@@ -62,57 +62,78 @@ export async function executeOrder(request: FastifyRequest, reply: FastifyReply)
       body.slippage
     );
 
-    // Check if client wants WebSocket upgrade
-    if (request.headers.upgrade === 'websocket') {
-      // Upgrade to WebSocket
-      await reply.hijack();
-      
-      request.server.websocketServer.handleUpgrade(request.raw, request.raw.socket, Buffer.alloc(0), (ws) => {
-        // Register WebSocket connection for this order
-        registerConnection(order.id, ws);
+    // Add to queue
+    await addOrderToQueue(order.id);
 
-        // Send initial status
-        broadcastStatus({
-          orderId: order.id,
-          status: 'pending',
-          timestamp: new Date().toISOString(),
-          data: {
-            tokenIn: order.tokenIn,
-            tokenOut: order.tokenOut,
-            amount: order.amount,
-            slippage: order.slippage,
-          },
-        });
-
-        // Add order to processing queue
-        addOrderToQueue(order.id).catch(error => {
-          console.error(`Failed to add order ${order.id} to queue:`, error);
-          broadcastStatus({
-            orderId: order.id,
-            status: 'failed',
-            timestamp: new Date().toISOString(),
-            data: { error: 'Failed to queue order' },
-          });
-        });
-      });
-    } else {
-      // Regular HTTP response
-      reply.code(201).send({
-        orderId: order.id,
-        status: order.status,
-        message: 'Order created successfully. Connect via WebSocket for real-time updates.',
-        websocketUrl: `/api/orders/execute?orderId=${order.id}`,
-      });
-
-      // Still add to queue
-      await addOrderToQueue(order.id);
-    }
+    // Return response
+    return reply.code(201).send({
+      orderId: order.id,
+      status: order.status,
+      message: 'Order created successfully',
+      websocketUrl: `/api/orders/${order.id}/ws`,
+    });
   } catch (error) {
     console.error('Error creating order:', error);
     return reply.code(500).send({
       error: 'Internal server error',
       message: 'Failed to create order',
     });
+  }
+}
+
+/**
+ * WebSocket handler for order updates
+ * GET /api/orders/:orderId/ws
+ */
+export async function subscribeToOrder(connection: any, request: FastifyRequest) {
+  const { orderId } = request.params as { orderId: string };
+
+  // Handle both { socket } wrapper and direct socket (just in case)
+  const socket = connection.socket || connection;
+
+  try {
+    if (!socket) {
+      throw new Error('Socket is undefined');
+    }
+
+    // Verify order exists
+    const order = await OrderModel.getById(orderId);
+    if (!order) {
+      socket.send(JSON.stringify({
+        error: 'Order not found',
+        orderId,
+      }));
+      socket.close();
+      return;
+    }
+
+    // Register connection
+    registerConnection(orderId, socket);
+
+    // Send current status immediately
+    socket.send(JSON.stringify({
+      orderId: order.id,
+      status: order.status,
+      timestamp: new Date().toISOString(),
+      data: {
+        tokenIn: order.tokenIn,
+        tokenOut: order.tokenOut,
+        amount: order.amount,
+        slippage: order.slippage,
+        txHash: order.txHash,
+        error: order.errorMessage,
+      },
+    }));
+
+    // Keep connection alive
+    // (Actual keep-alive logic might be needed depending on infrastructure,
+    // but for this demo, we just rely on TCP)
+
+  } catch (error) {
+    console.error(`WebSocket error for order ${orderId}:`, error);
+    if (socket && typeof socket.close === 'function') {
+      socket.close();
+    }
   }
 }
 

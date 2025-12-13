@@ -39,9 +39,14 @@ fastify.get('/api/metrics', async () => {
 });
 
 // Order routes
+// Order routes
 fastify.post('/api/orders/execute', executeOrder);
-fastify.get('/api/orders/:orderId', getOrder);
 fastify.get('/api/orders', getOrders);
+fastify.get('/api/orders/:orderId', getOrder);
+// WebSocket route
+fastify.get('/api/orders/:orderId/ws', { websocket: true }, (connection, req) => {
+  return import('./routes/orders.js').then(m => m.subscribeToOrder(connection, req));
+});
 
 // Root endpoint
 fastify.get('/', async () => {
@@ -61,7 +66,7 @@ fastify.get('/', async () => {
 // Graceful shutdown
 const gracefulShutdown = async () => {
   console.log('\nShutting down gracefully...');
-  
+
   try {
     await fastify.close();
     await redis.quit();
@@ -83,7 +88,7 @@ const start = async () => {
     if (redis.status !== 'ready' && redis.status !== 'connecting') {
       await redis.connect();
     }
-    
+
     // Initialize database
     await initDatabase();
 
